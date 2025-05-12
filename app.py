@@ -6,14 +6,19 @@ from io import BytesIO
 
 st.title("📄 Calcolatore Fattura - con IVA, Totali, PDF ed Excel")
 
+# Inserimento importo originale
 importo_lordo = st.number_input("💰 Inserisci l'importo in bolletta (con IVA):", min_value=0.0, format="%.2f")
+
+# Selezione dell'aliquota IVA
 iva_opzione = st.radio("🧾 Seleziona l'aliquota IVA:", ["10%", "22%"])
 aliquota_iva = 0.10 if iva_opzione == "10%" else 0.22
 
 if importo_lordo > 0:
+    # Calcolo imponibile e netto base
     imponibile = importo_lordo / (1 + aliquota_iva)
     netto_base = imponibile - 25.5
 
+    # Opzioni
     aggiunte = [16.5, 18.5, 21.5, 35]
     nomi_colonne = ["PRO 16.5", "PRO 18.5", "PRO 21.5", "PRO 35"]
     totali = []
@@ -24,10 +29,12 @@ if importo_lordo > 0:
         totale = netto + iva
         totali.append(round(totale, 2))
 
+    # Creazione DataFrame
     df = pd.DataFrame([totali], columns=nomi_colonne)
     st.subheader("📊 Totali a Pagare con IVA inclusa")
     st.dataframe(df, use_container_width=True)
 
+    # ========= GENERAZIONE PDF =========
     if st.button("📥 Scarica PDF"):
         pdf = FPDF()
         pdf.add_page()
@@ -43,6 +50,7 @@ if importo_lordo > 0:
         for i, nome in enumerate(nomi_colonne):
             pdf.cell(200, 10, txt=f"{nome}: €{totali[i]}", ln=True)
 
+        # Salva PDF in memoria
         pdf_buffer = BytesIO()
         pdf.output(pdf_buffer)
         pdf_buffer.seek(0)
@@ -50,6 +58,7 @@ if importo_lordo > 0:
         href_pdf = f'<a href="data:application/octet-stream;base64,{b64_pdf}" download="fattura_risultato.pdf">📄 Clicca per scaricare il PDF</a>'
         st.markdown(href_pdf, unsafe_allow_html=True)
 
+    # ========= GENERAZIONE EXCEL =========
     if st.button("📊 Scarica Excel"):
         excel_buffer = BytesIO()
         df.to_excel(excel_buffer, index=False, engine='openpyxl')
